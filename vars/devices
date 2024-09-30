@@ -16,4 +16,5 @@ readonly devices=(
   redfin
   bramble
   sunfish
+  komodo
 )

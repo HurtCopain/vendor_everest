@@ -13,4 +13,5 @@ readonly devices=(
   raven
   oriole
   barbet
+  komodo
 )
