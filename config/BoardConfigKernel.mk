@@ -1,4 +1,5 @@
 # Copyright (C) 2018-2024 The LineageOS Project
+#           (C) 2018-2023 The PixelExperience Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +26,8 @@
 #                                          defaults to arm-linux-androidkernel- for arm
 #                                                      aarch64-linux-android- for arm64
 #                                                      x86_64-linux-android- for x86
+#   TARGET_KERNEL_CROSS_COMPILE_PREFIX_ARM32 = Compiler prefix for building vDSO32
+#                                              defaults to arm-linux-androidkernel- for arm64
 #
 #   TARGET_KERNEL_CLANG_COMPILE        = Compile kernel with clang, defaults to true
 #   TARGET_KERNEL_CLANG_VERSION        = Clang prebuilts version, optional, defaults to clang-stable
@@ -93,7 +96,7 @@ ifneq ($(TARGET_KERNEL_CLANG_VERSION),)
     KERNEL_CLANG_VERSION := clang-$(TARGET_KERNEL_CLANG_VERSION)
 else
     # Use the default version of clang if TARGET_KERNEL_CLANG_VERSION hasn't been set by the device config
-    KERNEL_CLANG_VERSION := clang-r522817
+    KERNEL_CLANG_VERSION := clang-r487747c
 endif
 TARGET_KERNEL_CLANG_PATH ?= $(BUILD_TOP)/prebuilts/clang/host/$(HOST_PREBUILT_TAG)/$(KERNEL_CLANG_VERSION)
 
@@ -135,10 +138,24 @@ ifneq ($(KERNEL_NO_GCC), true)
         KERNEL_TOOLCHAIN_PREFIX ?= $(KERNEL_TOOLCHAIN_PREFIX_$(KERNEL_ARCH))
     endif
 
+    TARGET_KERNEL_CROSS_COMPILE_PREFIX_ARM32 := $(strip $(TARGET_KERNEL_CROSS_COMPILE_PREFIX_ARM32))
+    ifneq ($(TARGET_KERNEL_CROSS_COMPILE_PREFIX_ARM32),)
+        KERNEL_TOOLCHAIN_PREFIX_ARM32 ?= $(TARGET_KERNEL_CROSS_COMPILE_PREFIX_ARM32)
+    else
+        KERNEL_TOOLCHAIN_ARM32 ?= $(KERNEL_TOOLCHAIN_arm)
+        KERNEL_TOOLCHAIN_PREFIX_ARM32 ?= $(KERNEL_TOOLCHAIN_PREFIX_arm)
+    endif
+
     ifeq ($(KERNEL_TOOLCHAIN),)
         KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN_PREFIX)
     else
         KERNEL_TOOLCHAIN_PATH := $(KERNEL_TOOLCHAIN)/$(KERNEL_TOOLCHAIN_PREFIX)
+    endif
+
+    ifeq ($(KERNEL_TOOLCHAIN_ARM32),)
+        KERNEL_TOOLCHAIN_PATH_ARM32 := $(KERNEL_TOOLCHAIN_PREFIX_ARM32)
+    else
+        KERNEL_TOOLCHAIN_PATH_ARM32 := $(KERNEL_TOOLCHAIN_ARM32)/$(KERNEL_TOOLCHAIN_PREFIX_ARM32)
     endif
 
     # We need to add GCC toolchain to the path no matter what
@@ -153,8 +170,8 @@ ifneq ($(KERNEL_NO_GCC), true)
 
     # Needed for CONFIG_COMPAT_VDSO, safe to set for all arm64 builds
     ifeq ($(KERNEL_ARCH),arm64)
-        KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_arm)/$(KERNEL_TOOLCHAIN_PREFIX_arm)"
-        KERNEL_CROSS_COMPILE += CROSS_COMPILE_COMPAT="$(KERNEL_TOOLCHAIN_arm)/$(KERNEL_TOOLCHAIN_PREFIX_arm)"
+        KERNEL_CROSS_COMPILE += CROSS_COMPILE_ARM32="$(KERNEL_TOOLCHAIN_PATH_ARM32)"
+        KERNEL_CROSS_COMPILE += CROSS_COMPILE_COMPAT="$(KERNEL_TOOLCHAIN_PATH_ARM32)"
     endif
 
     ifeq ($(TARGET_KERNEL_CLANG_COMPILE),false)
