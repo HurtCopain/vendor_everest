@@ -12,4 +12,5 @@ readonly devices=(
   bluejay
   raven
   oriole
+  komodo
 )
